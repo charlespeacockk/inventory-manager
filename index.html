@@ -2,71 +2,64 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Inventory Manager</title>
 <style>
 body{font-family:Arial;background:#f0fdfa;padding:25px}
-main{max-width:700px;margin:auto;background:white;padding:30px;border-radius:16px}
-input{width:100%;padding:12px;margin:8px 0;box-sizing:border-box;border:1px solid #99f6e4;border-radius:8px}
-button{background:#0d9488;color:white;padding:12px 18px;border:0;border-radius:7px;cursor:pointer}
-.product{background:#ccfbf1;padding:18px;margin-top:12px;border-radius:10px;overflow-wrap:anywhere}
-#summary{color:#0f766e;line-height:1.8}
+main{max-width:650px;margin:auto;background:white;padding:25px;border-radius:15px}
+input{padding:11px;margin:6px;box-sizing:border-box;width:42%}
+button{padding:10px 14px;background:#0f766e;color:white;border:0;border-radius:7px;cursor:pointer}
+.product{background:#ccfbf1;padding:13px;margin:10px 0;border-radius:8px;display:flex;justify-content:space-between;gap:8px;align-items:center}
 </style>
 </head>
 <body>
 <main>
 <h1>Inventory Manager</h1>
-<p>Manage your products and track inventory value.</p>
 <input id="name" placeholder="Product name">
-<input id="quantity" type="number" min="0" placeholder="Quantity">
-<input id="price" type="number" min="0" step="any" placeholder="Unit price">
+<input id="stock" type="number" min="0" placeholder="Stock quantity">
 <button onclick="addProduct()">Add Product</button>
-<h3 id="summary"></h3>
-<div id="products"></div>
+<h2>Inventory List</h2>
+<div id="list"></div>
+<p id="summary"></p>
 </main>
 <script>
-let products=JSON.parse(localStorage.getItem("inventoryProducts")||"[]");
+let products=JSON.parse(localStorage.getItem("inventory")||"[]");
 function save(){
- localStorage.setItem("inventoryProducts",JSON.stringify(products));
+ localStorage.setItem("inventory",JSON.stringify(products));
  render();
 }
 function addProduct(){
- const name=document.getElementById("name");
- const quantity=document.getElementById("quantity");
- const price=document.getElementById("price");
- const q=Number(quantity.value);
- const p=Number(price.value);
- if(!name.value.trim()||quantity.value===""||price.value===""||q<0||p<0||!Number.isInteger(q))return;
- products.push({name:name.value.trim(),quantity:q,price:p});
- name.value=quantity.value=price.value="";
+ const name=document.getElementById("name").value.trim();
+ const field=document.getElementById("stock");
+ const stock=Number(field.value);
+ if(!name||field.value===""||!Number.isInteger(stock)||stock<0){
+  alert("Enter a valid product name and stock quantity.");
+  return;
+ }
+ const existing=products.find(p=>p.name.toLowerCase()===name.toLowerCase());
+ if(existing)existing.stock+=stock;
+ else products.push({name,stock});
+ document.getElementById("name").value="";
+ field.value="";
  save();
 }
 function render(){
- const list=document.getElementById("products");
+ const list=document.getElementById("list");
  list.innerHTML="";
- products.forEach((product,i)=>{
-  const item=document.createElement("div");
-  item.className="product";
-  const title=document.createElement("h3");
-  title.textContent=product.name;
-  const details=document.createElement("p");
-  details.textContent="Stock: "+product.quantity+
-  " | Unit Price: "+product.price.toFixed(2)+
-  " | Value: "+(product.quantity*product.price).toFixed(2);
-  const del=document.createElement("button");
-  del.textContent="Remove Product";
-  del.onclick=()=>{
-   products.splice(i,1);
-   save();
-  };
-  item.append(title,details,del);
-  list.appendChild(item);
+ products.forEach((p,i)=>{
+  const row=document.createElement("div");
+  row.className="product";
+  const info=document.createElement("span");
+  info.textContent=p.name+" — Stock: "+p.stock;
+  const remove=document.createElement("button");
+  remove.textContent="Delete";
+  remove.onclick=()=>{products.splice(i,1);save();};
+  row.append(info,remove);
+  list.appendChild(row);
  });
- const stock=products.reduce((sum,p)=>sum+p.quantity,0);
- const value=products.reduce((sum,p)=>sum+p.quantity*p.price,0);
  document.getElementById("summary").textContent=
- "Products: "+products.length+" | Total Stock: "+stock+
- " | Inventory Value: "+value.toFixed(2);
+ "Products: "+products.length+" | Total stock: "+
+ products.reduce((sum,p)=>sum+p.stock,0);
 }
 render();
 </script>
